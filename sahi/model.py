@@ -4,7 +4,7 @@
 import numpy as np
 
 from sahi.prediction import ObjectPrediction
-from sahi.utils.torch import cuda_is_available, empty_cuda_cache
+
 from typing import List, Dict, Optional, Union
 
 
@@ -13,12 +13,14 @@ class DetectionModel:
         self,
         model_path: str,
         config_path: Optional[str] = None,
+        names_path: Optional[str] = None,
         device: Optional[str] = None,
         mask_threshold: float = 0.5,
         prediction_score_threshold: float = 0.3,
         category_mapping: Optional[Dict] = None,
         category_remapping: Optional[Dict] = None,
         load_at_init: bool = True,
+        backend: str = "torch",
     ):
         """
         Init object detection/instance segmentation model.
@@ -40,9 +42,12 @@ class DetectionModel:
                 Remap category ids based on category names, after performing inference e.g. {"car": 3}
             load_at_init: bool
                 If True, automatically loads the model at initalization
+            backend: str
+                'torch' for pytorch models and 'tf' for tensorflow models.
         """
         self.model_path = model_path
         self.config_path = config_path
+        self.names_path = names_path
         self.model = None
         self.device = device
         self.mask_threshold = mask_threshold
@@ -53,8 +58,16 @@ class DetectionModel:
         self._object_prediction_list = None
 
         # automatically set device if its None
-        if not (self.device):
-            self.device = "cuda:0" if cuda_is_available() else "cpu"
+        if backend == "torch":
+            from sahi.utils.torch import cuda_is_available
+
+            if not (self.device):
+                self.device = "cuda:0" if cuda_is_available() else "cpu"
+        elif backend == "tf":
+            from sahi.utils.tf import gpu_is_available
+
+            if not (self.device):
+                self.device = "/GPU:0" if gpu_is_available() else "/device:CPU:0"
 
         # automatically load model if load_at_init is True
         if load_at_init:
@@ -73,7 +86,10 @@ class DetectionModel:
         Unloads the model from CPU/GPU.
         """
         self.model = None
-        empty_cuda_cache()
+        if self.backend == "torch":
+            from sahi.utils.torch import empty_cuda_cache
+
+            empty_cuda_cache()
 
     def perform_inference(self, image: np.ndarray):
         """
@@ -477,3 +493,122 @@ class Yolov5DetectionModel(DetectionModel):
         )
         # TODO: implement object_prediction_list to yolov5 format conversion
         NotImplementedError()
+
+
+class Yolov4DetectionModel(DetectionModel):
+    def load_model(self):
+        """
+        Detection model is initialized and set to self.model.
+        """
+        try:
+            from yolov4.tf import YOLOv4
+        except ImportError:
+            raise ImportError('Please run "pip install -U yolov4" ' "to install YOLOv4 first for YOLOv4 inference.")
+
+        # set model
+        try:
+            model = YOLOv4()
+            model.config.parse_names(self.names_path)
+            model.config.parse_cfg(cfg_path=self.config_path)
+            model.make_model()
+            model.load_weights(self.model_path, weights_type="yolo")
+            self.model = model
+        except Exception as e:
+            TypeError("model_path is not a valid yolov4 model path: ", e)
+
+        # set category_mapping
+        if not self.category_mapping:
+            category_mapping = {str(ind): category_name for ind, category_name in enumerate(self.category_names)}
+            self.category_mapping = category_mapping
+
+    def perform_inference(self, image: np.ndarray):
+        """
+        Prediction is performed using self.model and the prediction result is set to self._original_predictions.
+        Args:
+            image: np.ndarray
+                A numpy array that contains the image to be predicted.
+        """
+
+        # Confirm model is loaded
+        assert self.model is not None, "Model is not loaded, load it by calling .load_model()"
+
+        # prediction_result = self.model(image)
+        prediction_result = self.model.inference(media_path=image)
+
+        self._original_predictions = prediction_result
+
+    @property
+    def num_categories(self):
+        """
+        Returns number of categories
+        """
+        return len(self.model.config.names)
+
+    @property
+    def category_names(self):
+        return list(self.model.config.names.values())
+
+    def _create_object_prediction_list_from_original_predictions(
+        self,
+        shift_amount: Optional[List[int]] = [0, 0],
+        full_shape: Optional[List[int]] = None,
+    ):
+        """
+        self._original_predictions is converted to a list of prediction.ObjectPrediction and set to
+        self._object_prediction_list.
+        Args:
+            shift_amount: list
+                To shift the box and mask predictions from sliced image to full sized image, should be in the form of [shift_x, shift_y]
+            full_shape: list
+                Size of the full image after shifting, should be in the form of [height, width]
+        """
+        original_predictions = self._original_predictions
+
+        # handle only first image (batch=1)
+        predictions_in_xyxy_format = original_predictions.xyxy[0]
+
+        object_prediction_list = []
+
+        # process predictions
+        for prediction in predictions_in_xyxy_format:
+            x1 = int(prediction[0].item())
+            y1 = int(prediction[1].item())
+            x2 = int(prediction[2].item())
+            y2 = int(prediction[3].item())
+            bbox = [x1, y1, x2, y2]
+            score = prediction[4].item()
+            category_id = int(prediction[5].item())
+            category_name = original_predictions.names[category_id]
+
+            object_prediction = ObjectPrediction(
+                bbox=bbox,
+                category_id=category_id,
+                score=score,
+                bool_mask=None,
+                category_name=category_name,
+                shift_amount=shift_amount,
+                full_shape=full_shape,
+            )
+            object_prediction_list.append(object_prediction)
+
+        self._object_prediction_list = object_prediction_list
+
+
+#    def _create_original_predictions_from_object_prediction_list(
+#     self,
+#     object_prediction_list: List[ObjectPrediction],
+# ):
+#     """
+#     Converts a list of prediction.ObjectPrediction instance to detection model's original
+#     prediction format. Then returns the converted predictions.
+#     Can be considered as inverse of _create_object_prediction_list_from_predictions().
+#     Args:
+#         object_prediction_list: a list of prediction.ObjectPrediction
+#     Returns:
+#         original_predictions: a list of converted predictions in models original output format
+#     """
+#     assert self.original_predictions is not None, (
+#         "self.original_predictions" " cannot be empty, call .perform_inference() first"
+#     )
+#     # TODO: implement object_prediction_list to yolov5 format conversion
+#     NotImplementedError()

@@ -1,10 +1,13 @@
 # OBSS SAHI Tool
 # Code written by Fatih C Akyon, 2020.
 
-import torch
-from torch import stack as torch_stack
-from torch.cuda import empty_cache as empty_cuda_cache
-from torch.cuda import is_available as cuda_is_available
+try:
+    import torch
+    from torch import stack as torch_stack
+    from torch.cuda import empty_cache as empty_cuda_cache
+    from torch.cuda import is_available as cuda_is_available
+except ImportError:
+    raise ImportError('Please run "pip install -U torch" to install pytorch first for pytorch utilities.')
 
 
 def to_float_tensor(img) -> torch.tensor:
