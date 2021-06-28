@@ -533,7 +533,9 @@ class Yolov4DetectionModel(DetectionModel):
         assert self.model is not None, "Model is not loaded, load it by calling .load_model()"
 
         # prediction_result = self.model(image)
-        prediction_result = self.model.inference(media_path=image)
+        prediction_result = self.model.predict(image, self.prediction_score_threshold)
+        self.image_height = image.shape[0]
+        self.image_width = image.shape[1]
 
         self._original_predictions = prediction_result
 
@@ -565,20 +567,26 @@ class Yolov4DetectionModel(DetectionModel):
         original_predictions = self._original_predictions
 
         # handle only first image (batch=1)
-        predictions_in_xyxy_format = original_predictions.xyxy[0]
+        image_height = self.image_height
+        image_width = self.image_width
 
         object_prediction_list = []
 
         # process predictions
-        for prediction in predictions_in_xyxy_format:
-            x1 = int(prediction[0].item())
-            y1 = int(prediction[1].item())
-            x2 = int(prediction[2].item())
-            y2 = int(prediction[3].item())
-            bbox = [x1, y1, x2, y2]
-            score = prediction[4].item()
-            category_id = int(prediction[5].item())
-            category_name = original_predictions.names[category_id]
+        for prediction in original_predictions:
+            center_x = prediction[0]
+            center_y = prediction[1]
+            half_width = prediction[2] / 2
+            half_height = prediction[3] / 2
+            xmin = (center_x - half_width) * image_width
+            ymin = (center_y - half_height) * image_height
+            xmax = (center_x + half_width) * image_width
+            ymax = (center_y + half_height) * image_height
+            bbox = [xmin, ymin, xmax, ymax]
+
+            score = prediction[5].item()
+            category_id = int(prediction[4].item())
+            category_name = self.category_names[category_id]
 
             object_prediction = ObjectPrediction(
                 bbox=bbox,
@@ -593,22 +601,21 @@ class Yolov4DetectionModel(DetectionModel):
 
         self._object_prediction_list = object_prediction_list
 
-
-#    def _create_original_predictions_from_object_prediction_list(
-#     self,
-#     object_prediction_list: List[ObjectPrediction],
-# ):
-#     """
-#     Converts a list of prediction.ObjectPrediction instance to detection model's original
-#     prediction format. Then returns the converted predictions.
-#     Can be considered as inverse of _create_object_prediction_list_from_predictions().
-#     Args:
-#         object_prediction_list: a list of prediction.ObjectPrediction
-#     Returns:
-#         original_predictions: a list of converted predictions in models original output format
-#     """
-#     assert self.original_predictions is not None, (
-#         "self.original_predictions" " cannot be empty, call .perform_inference() first"
-#     )
-#     # TODO: implement object_prediction_list to yolov5 format conversion
-#     NotImplementedError()
+    def _create_original_predictions_from_object_prediction_list(
+        self,
+        object_prediction_list: List[ObjectPrediction],
+    ):
+        """
+        Converts a list of prediction.ObjectPrediction instance to detection model's original
+        prediction format. Then returns the converted predictions.
+        Can be considered as inverse of _create_object_prediction_list_from_predictions().
+        Args:
+        object_prediction_list: a list of prediction.ObjectPrediction
+        Returns:
+        original_predictions: a list of converted predictions in models original output format
+        """
+        assert self.original_predictions is not None, (
+            "self.original_predictions" " cannot be empty, call .perform_inference() first"
+        )
+        # TODO: implement object_prediction_list to yolov5 format conversion
+        NotImplementedError()
