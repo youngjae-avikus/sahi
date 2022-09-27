@@ -18,11 +18,11 @@
     <br>
     <a href="https://badge.fury.io/py/sahi"><img src="https://badge.fury.io/py/sahi.svg" alt="pypi version"></a>
     <a href="https://anaconda.org/conda-forge/sahi"><img src="https://anaconda.org/conda-forge/sahi/badges/version.svg" alt="conda version"></a>
-    <a href="https://github.com/obss/sahi/actions?query=event%3Apush+branch%3Amain+is%3Acompleted+workflow%3ACI"><img src="https://github.com/obss/sahi/workflows/CI/badge.svg" alt="ci"></a>
     <br>
     <a href="https://colab.research.google.com/github/obss/sahi/blob/main/demo/inference_for_yolov5.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
     <a href="https://huggingface.co/spaces/fcakyon/sahi-yolox"><img src="https://raw.githubusercontent.com/obss/sahi/main/resources/hf_spaces_badge.svg" alt="HuggingFace Spaces"></a>
     <br>
+    <a href="https://github.com/obss/sahi/actions/workflows/package_testing.yml"><img src="https://github.com/obss/sahi/actions/workflows/package_testing.yml/badge.svg" alt="package testing"></a>
     
 </div>
 </div>
@@ -49,13 +49,15 @@ Object detection and instance segmentation are by far the most important fields 
 
 - [Introduction to SAHI](https://medium.com/codable/sahi-a-vision-library-for-performing-sliced-inference-on-large-images-small-objects-c8b086af3b80)
 
-- [Official paper](https://arxiv.org/abs/2202.06934) (NEW)
+- [Official paper](https://arxiv.org/abs/2202.06934) (ICIP 2022 oral, 11+ citations)
+
+- [Pretrained weights and ICIP 2022 paper files](https://github.com/fcakyon/small-object-detection-benchmark)
 
 - [Video inference support is live](https://github.com/obss/sahi/issues/457) (NEW)
 
-- [Kaggle notebook](https://www.kaggle.com/remekkinas/sahi-slicing-aided-hyper-inference-yv5-and-yx) (NEW)
+- [Kaggle notebook](https://www.kaggle.com/remekkinas/sahi-slicing-aided-hyper-inference-yv5-and-yx)
 
-- [Satellite object detection](https://blog.ml6.eu/how-to-detect-small-objects-in-very-large-images-70234bab0f98) (NEW)
+- [Satellite object detection](https://blog.ml6.eu/how-to-detect-small-objects-in-very-large-images-70234bab0f98)
 
 - [Error analysis plots & evaluation](https://github.com/obss/sahi/issues/356) (NEW)
 
@@ -107,23 +109,23 @@ conda install -c conda-forge shapely
 - Install your desired version of pytorch and torchvision:
 
 ```console
-conda install pytorch=1.10.2 torchvision=0.11.3 cudatoolkit=11.3 -c pytorch
+conda install pytorch=1.11.0 torchvision=0.12.0 cudatoolkit=11.3 -c pytorch
 ```
   
 - Install your desired detection framework (yolov5):
 
 ```console
-pip install yolov5==6.1.3
+pip install yolov5==6.2.1
 ```
 
 - Install your desired detection framework (mmdet):
 
 ```console
-pip install mmcv-full==1.5.3 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.10.0/index.html
+pip install mmcv-full==1.6.1 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
 ```
 
 ```console
-pip install mmdet==2.25.0
+pip install mmdet==2.25.1
 ```
 
 - Install your desired detection framework (detectron2):
@@ -195,7 +197,7 @@ If you use this package in your work, please cite it as:
 
 ## <div align="center">Contributing</div>
 
-`sahi` library currently supports all [YOLOv5 models](https://github.com/ultralytics/yolov5/releases), [MMDetection models](https://github.com/open-mmlab/mmdetection/blob/master/docs/model_zoo.md), [Detectron2 models](https://github.com/facebookresearch/detectron2/blob/main/MODEL_ZOO.md), and [HuggingFace object detection models](https://huggingface.co/models?pipeline_tag=object-detection&sort=downloads). Moreover, it is easy to add new frameworks.
+`sahi` library currently supports all [YOLOv5 models](https://github.com/ultralytics/yolov5/releases), [MMDetection models](https://github.com/open-mmlab/mmdetection/blob/master/docs/en/model_zoo.md), [Detectron2 models](https://github.com/facebookresearch/detectron2/blob/main/MODEL_ZOO.md), and [HuggingFace object detection models](https://huggingface.co/models?pipeline_tag=object-detection&sort=downloads). Moreover, it is easy to add new frameworks.
 
 All you need to do is, creating a new class in [model.py](sahi/model.py) that implements [DetectionModel class](https://github.com/obss/sahi/blob/21ecb285aa6bf93c2a00605dfb9b138f19d8d62d/sahi/model.py#L21). You can take the [MMDetection wrapper](https://github.com/obss/sahi/blob/21ecb285aa6bf93c2a00605dfb9b138f19d8d62d/sahi/model.py#L177) or [YOLOv5 wrapper](https://github.com/obss/sahi/blob/21ecb285aa6bf93c2a00605dfb9b138f19d8d62d/sahi/model.py#L388) as a reference.
 
@@ -210,8 +212,7 @@ pip install -e ."[dev]"
 - Reformat with black and isort:
 
 ```bash
-black . --config pyproject.toml
-isort .
+python -m scripts.run_code_style format
 ```
 
 ## <div align="center">Contributors</div>
@@ -233,12 +234,18 @@ isort .
 <a align="left" href="https://github.com/madenburak" target="_blank">Burak Maden</a>
   
 <a align="left" href="https://github.com/PushpakBhoge" target="_blank">Pushpak Bhoge</a>
+
+<a align="left" href="https://github.com/mcvarer" target="_blank">M. Can V.</a>
   
 <a align="left" href="https://github.com/mecevit" target="_blank">Mehmet Ecevit</a>
 
 <a align="left" href="https://github.com/ssahinnkadir" target="_blank">Kadir Sahin</a>
   
 <a align="left" href="https://github.com/weypro" target="_blank">Wey</a>
+
+<a align="left" href="https://github.com/youngjae-avikus" target="_blank">Youngjae</a>
+
+<a align="left" href="https://github.com/tureckova" target="_blank">Alzbeta Tureckova</a>
 
 <a align="left" href="https://github.com/weiji14" target="_blank">Wei Ji</a>
 

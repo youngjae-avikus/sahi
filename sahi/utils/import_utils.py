@@ -3,7 +3,7 @@ import importlib.util
 import logging
 import os
 
-# adapted from https://github.com/huggingface/transformers/src/transformers/utils/import_utils.py
+# adapted from https://github.com/huggingface/transformers/blob/main/src/transformers/utils/import_utils.py
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -57,7 +57,6 @@ def is_available(module_name: str):
     return importlib.util.find_spec(module_name) is not None
 
 
-@contextlib.contextmanager
 def check_requirements(package_names):
     """
     Raise error if module is not installed.

@@ -180,18 +180,12 @@ class DetectionModel:
         return self._original_predictions
 
 
-@check_requirements(["torch", "mmdet", "mmcv"])
 class MmdetDetectionModel(DetectionModel):
     def load_model(self):
         """
         Detection model is initialized and set to self.model.
         """
-        try:
-            import mmdet
-        except ImportError:
-            raise ImportError(
-                'Please run "pip install -U mmcv mmdet" ' "to install MMDetection first for MMDetection inference."
-            )
+        check_requirements(["torch", "mmdet", "mmcv"])
 
         from mmdet.apis import init_detector
 
@@ -205,6 +199,16 @@ class MmdetDetectionModel(DetectionModel):
         # update model image size
         if self.image_size is not None:
             model.cfg.data.test.pipeline[1]["img_scale"] = (self.image_size, self.image_size)
+
+        self.set_model(model)
+
+    def set_model(self, model: Any):
+        """
+        Sets the underlying MMDetection model.
+        Args:
+            model: Any
+                A MMDetection model
+        """
 
         # set self.model
         self.model = model
@@ -221,12 +225,7 @@ class MmdetDetectionModel(DetectionModel):
             image: np.ndarray
                 A numpy array that contains the image to be predicted. 3 channel image should be in RGB order.
         """
-        try:
-            import mmdet
-        except ImportError:
-            raise ImportError(
-                'Please run "pip install -U mmcv mmdet" ' "to install MMDetection first for MMDetection inference."
-            )
+        check_requirements(["torch", "mmdet", "mmcv"])
 
         # Confirm model is loaded
         if self.model is None:
@@ -368,12 +367,13 @@ class MmdetDetectionModel(DetectionModel):
         self._object_prediction_list_per_image = object_prediction_list_per_image
 
 
-@check_requirements(["torch", "yolov5"])
 class Yolov5DetectionModel(DetectionModel):
     def load_model(self):
         """
         Detection model is initialized and set to self.model.
         """
+        check_requirements(["torch", "yolov5"])
+
         import yolov5
 
         try:
@@ -431,12 +431,23 @@ class Yolov5DetectionModel(DetectionModel):
         """
         Returns if model output contains segmentation mask
         """
-        has_mask = self.model.with_mask
-        return has_mask
+        import yolov5
+        from packaging import version
+
+        if version.parse(yolov5.__version__) < version.parse("6.2.0"):
+            return False
+        else:
+            return False  # fix when yolov5 supports segmentation models
 
     @property
     def category_names(self):
-        return self.model.names
+        import yolov5
+        from packaging import version
+
+        if version.parse(yolov5.__version__) >= version.parse("6.2.0"):
+            return list(self.model.names.values())
+        else:
+            return self.model.names
 
     def _create_object_prediction_list_from_original_predictions(
         self,
@@ -511,9 +522,10 @@ class Yolov5DetectionModel(DetectionModel):
         self._object_prediction_list_per_image = object_prediction_list_per_image
 
 
-@check_requirements(["torch", "detectron2"])
 class Detectron2DetectionModel(DetectionModel):
     def load_model(self):
+        check_requirements(["torch", "detectron2"])
+
         from detectron2.config import get_cfg
         from detectron2.data import MetadataCatalog
         from detectron2.engine import DefaultPredictor
@@ -673,7 +685,6 @@ class Detectron2DetectionModel(DetectionModel):
         self._object_prediction_list_per_image = object_prediction_list_per_image
 
 
-@check_requirements(["torch", "transformers"])
 class HuggingfaceDetectionModel(DetectionModel):
     import torch
 
@@ -691,6 +702,8 @@ class HuggingfaceDetectionModel(DetectionModel):
         load_at_init: bool = True,
         image_size: int = None,
     ):
+        check_requirements(["torch", "transformers"])
+
         self._feature_extractor = feature_extractor
         self._image_shapes = []
         super().__init__(
@@ -722,6 +735,8 @@ class HuggingfaceDetectionModel(DetectionModel):
         return self.model.config.num_labels
 
     def load_model(self):
+        check_requirements(["torch", "transformers"])
+
         from transformers import AutoFeatureExtractor, AutoModelForObjectDetection
 
         model = AutoModelForObjectDetection.from_pretrained(self.model_path)
@@ -837,6 +852,7 @@ class HuggingfaceDetectionModel(DetectionModel):
                         to_type="voc",
                         image_size=(image_width, image_height),
                         return_values=True,
+                        strict=False,
                     )
                 )
 
@@ -861,7 +877,6 @@ class HuggingfaceDetectionModel(DetectionModel):
         self._object_prediction_list_per_image = object_prediction_list_per_image
 
 
-@check_requirements(["torch", "torchvision"])
 class TorchVisionDetectionModel(DetectionModel):
     def __init__(
         self,
@@ -891,6 +906,8 @@ class TorchVisionDetectionModel(DetectionModel):
         )
 
     def load_model(self):
+        check_requirements(["torch", "torchvision"])
+
         import torch
 
         from sahi.utils.torchvision import MODEL_NAME_TO_CONSTRUCTOR
@@ -940,6 +957,7 @@ class TorchVisionDetectionModel(DetectionModel):
             model: Any
                 A TorchVision model
         """
+        check_requirements(["torch", "torchvision"])
 
         model.eval()
         self.model = model.to(self.device)

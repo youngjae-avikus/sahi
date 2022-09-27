@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from sahi.utils.file import import_model_class
 from sahi.utils.import_utils import check_requirements
@@ -16,7 +16,8 @@ class AutoDetectionModel:
     @staticmethod
     def from_pretrained(
         model_type: str,
-        model_path: str,
+        model_path: Optional[str] = None,
+        model: Optional[Any] = None,
         config_path: Optional[str] = None,
         device: Optional[str] = None,
         mask_threshold: float = 0.5,
@@ -62,6 +63,7 @@ class AutoDetectionModel:
 
         return DetectionModel(
             model_path=model_path,
+            model=model,
             config_path=config_path,
             device=device,
             mask_threshold=mask_threshold,
@@ -74,7 +76,6 @@ class AutoDetectionModel:
         )
 
     @staticmethod
-    @check_requirements(["layer"])
     def from_layer(
         model_path: str,
         no_cache: bool = False,
@@ -112,6 +113,8 @@ class AutoDetectionModel:
             ImportError: If Layer is not installed in your environment
             ValueError: If model path does not match expected pattern: organization_name/project_name/models/model_name
         """
+        check_requirements(["layer"])
+
         import layer
 
         layer_model = layer.get_model(name=model_path, no_cache=no_cache).get_train()
