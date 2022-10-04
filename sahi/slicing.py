@@ -64,7 +64,6 @@ def get_slice_bboxes_single_row(
     y_min = y_max = y_start
 
     if slice_height and slice_width:
-        y_overlap = int(overlap_height_ratio * slice_height)
         x_overlap = int(overlap_width_ratio * slice_width)
     else:
         raise ValueError("Compute type is not auto and slice width and height are not provided.")
@@ -310,6 +309,8 @@ def slice_image(
     overlap_width_ratio: float = None,
     auto_slice_resolution: bool = True,
     min_area_ratio: float = 0.1,
+    single_row: bool = True,
+    single_row_y_start: int = 200,
     out_ext: Optional[str] = None,
     verbose: bool = False,
 ) -> SliceImageResult:
@@ -372,15 +373,26 @@ def slice_image(
     image_width, image_height = image_pil.size
     if not (image_width != 0 and image_height != 0):
         raise RuntimeError(f"invalid image size: {image_pil.size} for 'slice_image'.")
-    slice_bboxes = get_slice_bboxes(
-        image_height=image_height,
-        image_width=image_width,
-        auto_slice_resolution=auto_slice_resolution,
-        slice_height=slice_height,
-        slice_width=slice_width,
-        overlap_height_ratio=overlap_height_ratio,
-        overlap_width_ratio=overlap_width_ratio,
-    )
+
+    if single_row:
+        slice_bboxes = get_slice_bboxes_single_row(
+            image_height=image_height,
+            image_width=image_width,
+            slice_height=slice_height,
+            slice_width=slice_width,
+            y_start=single_row_y_start, 
+            overlap_width_ratio=overlap_width_ratio,
+        )
+    else:
+        slice_bboxes = get_slice_bboxes(
+            image_height=image_height,
+            image_width=image_width,
+            auto_slice_resolution=auto_slice_resolution,
+            slice_height=slice_height,
+            slice_width=slice_width,
+            overlap_height_ratio=overlap_height_ratio,
+            overlap_width_ratio=overlap_width_ratio,
+        )
 
     t0 = time.time()
     n_ims = 0
