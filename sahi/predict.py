@@ -135,6 +135,8 @@ def get_sliced_prediction(
     verbose: int = 1,
     merge_buffer_length: int = None,
     auto_slice_resolution: bool = True,
+    single_row_predict: bool = False,
+    single_row_y_start: int =  0,
 ) -> PredictionResult:
     """
     Function for slice image + get predicion for each slice + combine predictions in full image.
@@ -202,6 +204,8 @@ def get_sliced_prediction(
         overlap_height_ratio=overlap_height_ratio,
         overlap_width_ratio=overlap_width_ratio,
         auto_slice_resolution=auto_slice_resolution,
+        single_row_predict=single_row_predict,
+        single_row_y_start=single_row_y_start
     )
     num_slices = len(slice_image_result)
     time_end = time.time() - time_start
@@ -325,6 +329,8 @@ def predict(
     verbose: int = 1,
     return_dict: bool = False,
     force_postprocess_type: bool = False,
+    single_row_predict: bool = False,
+    single_row_y_start: int =  0,
 ):
     """
     Performs prediction for all present images in given folder.
@@ -512,6 +518,8 @@ def predict(
                 postprocess_match_metric=postprocess_match_metric,
                 postprocess_match_threshold=postprocess_match_threshold,
                 postprocess_class_agnostic=postprocess_class_agnostic,
+                single_row_predict=single_row_predict,
+                single_row_y_start=single_row_y_start,
                 verbose=1 if verbose else 0,
             )
             object_prediction_list = prediction_result.object_prediction_list

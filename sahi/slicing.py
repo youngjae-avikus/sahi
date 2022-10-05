@@ -309,8 +309,8 @@ def slice_image(
     overlap_width_ratio: float = None,
     auto_slice_resolution: bool = True,
     min_area_ratio: float = 0.1,
-    single_row: bool = True,
-    single_row_y_start: int = 200,
+    single_row_predict: bool = False,
+    single_row_y_start: int =  0,
     out_ext: Optional[str] = None,
     verbose: bool = False,
 ) -> SliceImageResult:
@@ -373,8 +373,8 @@ def slice_image(
     image_width, image_height = image_pil.size
     if not (image_width != 0 and image_height != 0):
         raise RuntimeError(f"invalid image size: {image_pil.size} for 'slice_image'.")
-
-    if single_row:
+   
+    if single_row_predict:
         slice_bboxes = get_slice_bboxes_single_row(
             image_height=image_height,
             image_width=image_width,
