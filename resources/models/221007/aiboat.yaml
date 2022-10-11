@@ -1,0 +1,26 @@
+## in 4way3090
+
+train:
+  - /data/wangsan/OPEN_MARINE_DATASET/OIDv6/images/train/
+  # - /data/wangsan/OPEN_MARINE_DATASET/OIDv6/images/val/
+  # - /data/wangsan/OPEN_MARINE_DATASET/Seaship/images/
+  # - /data/wangsan/OPEN_MARINE_DATASET/SMDPlus/images/train/
+  # - /data/wangsan/OPEN_MARINE_DATASET/SMDPlus/images/val/
+  - /data/wangsan/BUSAN/images/
+  - /data/wangsan/INCHEON/images/
+  - /data/wangsan/KIMPO/images/
+  # - /data/wangsan/WANGSAN_CNP/images/
+  # - /data/wangsan/0706_WANGSAN_CNP/images/
+  - /data/FLL/images/train
+  # - /data/FLL_CNP/images/
+  # - /data/wangsan/WANGSAN/images/
+val: 
+  # - /data/wangsan/WANGSAN/images/
+  # - /data/wangsan/OPEN_MARINE_DATASET/OIDv6/images/val/
+  # - /data/wangsan/OPEN_MARINE_DATASET/SMDPlus/images/val/
+  - /data/FLL/images/val
+
+nc: 4
+names: ['Buoy', 'Boat', 'Channel Marker', 'Speed Warning Sign']
+# names: ['Buoy', 'Sailing yacht', 'Boat', 'Structure', 'Other', 'Channel Marker', 'Speed Warning Sign', 'Extra boat']
+# names: ['Buoy', 'Sailing yacht', 'Rowing boat', 'Motor boat', 'Vessel', 'Structure', 'Other']
