@@ -1,0 +1,11 @@
+## in 4way3090
+
+train:
+  - /data/LVIS_OID/images/train
+  - /data/OBJ365/images/train
+val: 
+  - /data/LVIS_OID/images/val
+  - /data/OBJ365/images/val
+
+nc: 4
+names: ['Buoy', 'Boat', 'Channel Marker', 'Speed Warning Sign']

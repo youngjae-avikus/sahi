@@ -1,0 +1,18 @@
+## in 4way3090
+
+train:
+  - /data/wangsan/BUSAN/images/
+  - /data/wangsan/INCHEON/images/
+  - /data/wangsan/KIMPO/images/
+  - /data/wangsan/WANGSAN_CNP/images/
+  - /data/wangsan/0706_WANGSAN_CNP/images/
+  - /data/FLL/images/train
+  - /data/FLL_CNP/images/
+
+val: 
+  - /data/FLL/images/val
+
+nc: 4
+names: ['Buoy', 'Boat', 'Channel Marker', 'Speed Warning Sign']
+# names: ['Buoy', 'Sailing yacht', 'Boat', 'Structure', 'Other', 'Channel Marker', 'Speed Warning Sign', 'Extra boat']
+# names: ['Buoy', 'Sailing yacht', 'Rowing boat', 'Motor boat', 'Vessel', 'Structure', 'Other']
