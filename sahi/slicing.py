@@ -29,7 +29,7 @@ MAX_WORKERS = 20
 def get_slice_bboxes_single_row(
     image_height: int,
     image_width: int,
-    y_start: int, 
+    custom_slice_y_start: int, 
     slice_height: int = None,
     slice_width: int = None,
     overlap_width_ratio: float = 0.2,
@@ -61,7 +61,7 @@ def get_slice_bboxes_single_row(
             ]
     """
     slice_bboxes = []
-    y_min = y_max = y_start
+    y_min = y_max = custom_slice_y_start
 
     if slice_height and slice_width:
         x_overlap = int(overlap_width_ratio * slice_width)
@@ -84,6 +84,72 @@ def get_slice_bboxes_single_row(
             x_min = x_max - x_overlap
 
     return slice_bboxes
+
+
+def get_slice_bboxes_one_box(
+    image_height: int,
+    image_width: int,
+    custom_slice_x_start: int,
+    custom_slice_y_start: int, 
+    slice_height: int = None,
+    slice_width: int = None
+) -> List[List[int]]:
+    
+    if custom_slice_x_start < 0 or custom_slice_y_start < 0 or \
+            custom_slice_x_start+slice_width > image_width or custom_slice_y_start+slice_height > image_height:
+        raise ValueError("Compute type is not auto and slice width and height are not provided.")
+    
+    slice_bboxes = [[custom_slice_x_start, 
+                     custom_slice_y_start,
+                     custom_slice_x_start+slice_width,
+                     custom_slice_y_start+slice_height]]
+
+    return slice_bboxes
+
+
+def get_slice_bboxes_four_box(
+    image_height: int,
+    image_width: int,
+    custom_slice_x_start: int,
+    custom_slice_y_start: int, 
+    slice_height: int = None,
+    slice_width: int = None,
+    overlap_height_ratio: float = 0.2,
+    overlap_width_ratio: float = 0.2,
+) -> List[List[int]]:
+    
+    slice_bboxes = []
+    y_min = y_max = custom_slice_y_start
+
+    if slice_height and slice_width:
+        y_overlap = int(overlap_height_ratio * slice_height)
+        x_overlap = int(overlap_width_ratio * slice_width)
+    else:
+        raise ValueError("Compute type is not auto and slice width and height are not provided.")
+
+    y_cnt = 0
+    
+    while y_cnt < 2 and y_max < image_height:
+        x_cnt = 0
+        x_min = x_max = custom_slice_x_start
+        y_max = y_min + slice_height
+        while x_cnt < 2 and x_max < image_width:
+            x_max = x_min + slice_width
+            if y_max > image_height or x_max > image_width:
+                xmax = min(image_width, x_max)
+                ymax = min(image_height, y_max)
+                xmin = max(0, xmax - slice_width)
+                ymin = max(0, ymax - slice_height)
+                slice_bboxes.append([xmin, ymin, xmax, ymax])
+            else:
+                slice_bboxes.append([x_min, y_min, x_max, y_max])
+            x_min = x_max - x_overlap
+            x_cnt += 1
+        y_min = y_max - y_overlap
+        y_cnt +=1
+        
+    return slice_bboxes
+
 
 def get_slice_bboxes(
     image_height: int,
@@ -309,8 +375,9 @@ def slice_image(
     overlap_width_ratio: float = None,
     auto_slice_resolution: bool = True,
     min_area_ratio: float = 0.1,
-    single_row_predict: bool = False,
-    single_row_y_start: int =  0,
+    custom_slice_mode: int = 0,
+    custom_slice_x_start: int = 0,
+    custom_slice_y_start: int = 0,
     out_ext: Optional[str] = None,
     verbose: bool = False,
 ) -> SliceImageResult:
@@ -373,17 +440,8 @@ def slice_image(
     image_width, image_height = image_pil.size
     if not (image_width != 0 and image_height != 0):
         raise RuntimeError(f"invalid image size: {image_pil.size} for 'slice_image'.")
-   
-    if single_row_predict:
-        slice_bboxes = get_slice_bboxes_single_row(
-            image_height=image_height,
-            image_width=image_width,
-            slice_height=slice_height,
-            slice_width=slice_width,
-            y_start=single_row_y_start, 
-            overlap_width_ratio=overlap_width_ratio,
-        )
-    else:
+    
+    if custom_slice_mode == 0:
         slice_bboxes = get_slice_bboxes(
             image_height=image_height,
             image_width=image_width,
@@ -393,6 +451,36 @@ def slice_image(
             overlap_height_ratio=overlap_height_ratio,
             overlap_width_ratio=overlap_width_ratio,
         )
+    elif custom_slice_mode == 1: 
+        slice_bboxes = get_slice_bboxes_single_row(
+            image_height=image_height,
+            image_width=image_width,
+            slice_height=slice_height,
+            slice_width=slice_width,
+            custom_slice_y_start=custom_slice_y_start, 
+            overlap_width_ratio=overlap_width_ratio,
+        )
+    elif custom_slice_mode == 2:
+        slice_bboxes = get_slice_bboxes_one_box(
+            image_height=image_height,
+            image_width=image_width,
+            slice_height=slice_height,
+            slice_width=slice_width,
+            custom_slice_x_start=custom_slice_x_start, 
+            custom_slice_y_start=custom_slice_y_start, 
+        )
+    elif custom_slice_mode == 3:
+        slice_bboxes = get_slice_bboxes_four_box(
+            image_height=image_height,
+            image_width=image_width,
+            slice_height=slice_height,
+            slice_width=slice_width,
+            custom_slice_x_start=custom_slice_x_start, 
+            custom_slice_y_start=custom_slice_y_start, 
+            overlap_height_ratio=overlap_height_ratio,
+            overlap_width_ratio=overlap_width_ratio,
+        )
+
 
     t0 = time.time()
     n_ims = 0

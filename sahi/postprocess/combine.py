@@ -171,6 +171,7 @@ def batched_greedy_nmm(
         curr_indices = torch.where(category_ids == category_id)[0]
         curr_keep_to_merge_list = greedy_nmm(object_predictions_as_tensor[curr_indices], match_metric, match_threshold)
         curr_indices_list = curr_indices.tolist()
+        
         for curr_keep, curr_merge_list in curr_keep_to_merge_list.items():
             keep = curr_indices_list[curr_keep]
             merge_list = [curr_indices_list[curr_merge_ind] for curr_merge_ind in curr_merge_list]
@@ -235,6 +236,7 @@ def greedy_nmm(
 
         # sanity check
         if len(order) == 0:
+            keep_to_merge_list[idx.tolist()] = []
             break
 
         # select coordinates of BBoxes according to
@@ -318,11 +320,12 @@ def batched_nmm(
         keep_to_merge_list: (Dict[int:List[int]]) mapping from prediction indices
         to keep to a list of prediction indices to be merged.
     """
+
     category_ids = object_predictions_as_tensor[:, 5].squeeze()
     keep_to_merge_list = {}
     for category_id in torch.unique(category_ids):
         curr_indices = torch.where(category_ids == category_id)[0]
-        curr_keep_to_merge_list = nmm(object_predictions_as_tensor[curr_indices], match_metric, match_threshold)
+        curr_keep_to_merge_list = greedy_nmm(object_predictions_as_tensor[curr_indices], match_metric, match_threshold)
         curr_indices_list = curr_indices.tolist()
         for curr_keep, curr_merge_list in curr_keep_to_merge_list.items():
             keep = curr_indices_list[curr_keep]
@@ -548,7 +551,7 @@ class GreedyNMMPostprocess(PostprocessPredictions):
                 match_threshold=self.match_threshold,
                 match_metric=self.match_metric,
             )
-
+    
         selected_object_predictions = []
         for keep_ind, merge_ind_list in keep_to_merge_list.items():
             for merge_ind in merge_ind_list:
