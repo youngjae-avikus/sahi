@@ -2,6 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=video
 
 resources/
+*.zip
 
 ### Video ###
 *.3g2
